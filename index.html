@@ -511,8 +511,8 @@ async function runMatching() {
 
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
     const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    if (!data.content) throw new Error('No response from AI — check your API key in Netlify environment variables');
+    if (data.error) throw new Error(typeof data.error === 'object' ? JSON.stringify(data.error) : data.error);
+    if (!data.content) throw new Error('No content returned. API response: ' + JSON.stringify(data).substring(0, 200));
     const raw  = data.content.map(b => b.text || '').join('');
     const clean = raw.replace(/```json|```/g, '').trim();
     const trials = JSON.parse(clean);
@@ -554,7 +554,12 @@ function renderResults(trials, pid, diag) {
   sb.style.display = 'flex';
   const top = sorted[0];
   document.getElementById('summaryText').innerHTML = `<strong>${trials.length} eligible trials</strong> from live ClinicalTrials.gov data for ${pid} (${diag}). Top match: <strong>${top.nct}</strong> at <strong>${top.score}% alignment</strong>.`;
-  document.getElementById('resultsScroll').innerHTML = sorted.map((t,i) => card(t,i)).join('');
+  const requestedCity = document.getElementById('location').value.split(',')[0].split('\u2014')[0].trim().toLowerCase();
+  const allLocations = sorted.flatMap(t => t.locations || []);
+  const hasLocalMatch = allLocations.some(l => l.toLowerCase().includes(requestedCity));
+  const uniqueCities = [...new Set(allLocations.map(l => l.split(',')[0].trim()))].slice(0,4).join(', ');
+  const locationNotice = (!hasLocalMatch && requestedCity.length > 2) ? `<div style="background:rgba(245,166,35,0.08);border:0.5px solid rgba(245,166,35,0.25);border-radius:10px;padding:12px 16px;display:flex;align-items:flex-start;gap:10px;margin-bottom:4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5A623" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><p style="font-size:12.5px;color:#A8B8D0;line-height:1.6;margin:0">No recruiting trials currently found near <strong style="color:#F5A623">${document.getElementById('location').value.split('\u2014')[0].trim()}</strong>. Showing nearest available US sites: <strong style="color:#F0F4FF">${uniqueCities}</strong>. Trial recruitment sites expand as enrollment opens — contact the sponsor directly to inquire about upcoming sites in your area.</p></div>` : '';
+  document.getElementById('resultsScroll').innerHTML = locationNotice + sorted.map((t,i) => card(t,i)).join('');
 }
 
 function scoreClass(s) { return s>=75?'high':s>=50?'medium':'low'; }
