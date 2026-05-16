@@ -2,6 +2,19 @@ export default async (req) => {
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });
   let body;
   try { body = await req.json(); } catch(e) { return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400 }); }
+
+  // PDF extraction mode
+  if (body.extractOnly && body.documentText) {
+    const content = `Extract the following patient information from this clinical document and return ONLY a JSON object with keys: patientId, age, sex, diagnosis, biomarkers, treatments, performance, location. If a field is not found leave it as empty string. Document:\n\n${body.documentText}`;
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content }] })
+    });
+    const d = await r.json();
+    return new Response(JSON.stringify(d), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }
+
   const patientId = body.patientId || 'PT-ANON';
   const age = body.age || 'Not specified';
   const sex = body.sex || 'Not specified';
@@ -11,6 +24,7 @@ export default async (req) => {
   const performance = body.performance || 'Not specified';
   const location = body.location || 'Not specified';
   if (!diagnosis) return new Response(JSON.stringify({ error: 'diagnosis required' }), { status: 400 });
+
   let trialsContext = 'Generate realistic US recruiting trials for this indication.';
   try {
     const cond = encodeURIComponent(diagnosis.split(',')[0].trim());
@@ -31,12 +45,14 @@ export default async (req) => {
       }).join('\n\n');
     }
   } catch(e) { console.error('CT.gov:', e.message); }
-  const content = `You are a biomedical AI for clinical trial matching using FHIR R4, SNOMED CT, and MeSH.\n\nPATIENT: ID=${patientId}, Age=${age}, Sex=${sex}, Diagnosis=${diagnosis}, Biomarkers=${biomarkers}, Treatments=${treatments}, Performance=${performance}, Location=${location}\n\nPrioritize US trials near ${location}.\n\nTRIALS:\n${trialsContext}\n\nReturn the 4 best matches as a JSON array. Each object must have: nct, title, phase, status, score, sponsor, locations (array), intervention, criteria (array of 4 objects with text and status fields where status is met/unmet/partial), fhir, snomed (array of 2), mesh (array of 2), screened. Return ONLY the JSON array, no markdown.`;
+
+  const content = `You are a biomedical AI engine for clinical trial eligibility analysis using FHIR R4, SNOMED CT, and MeSH.\n\nPATIENT: ID=${patientId}, Age=${age}, Sex=${sex}, Diagnosis=${diagnosis}, Biomarkers=${biomarkers}, Treatments=${treatments}, Performance=${performance}, Location=${location}\n\nPrioritize US trials near ${location}. Only show non-US trials if no US alternatives exist.\n\nTRIALS:\n${trialsContext}\n\nReturn the 4 best matches as a JSON array. Each object must have: nct, title, phase, status, score (0-100), sponsor, locations (array of strings), intervention (one sentence), criteria (array of 4 objects with text and status fields where status is met/unmet/partial), fhir, snomed (array of 2 strings), mesh (array of 2 strings), screened (integer). Return ONLY the JSON array, no markdown.`;
+
   try {
     const ar = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 4000, messages: [{ role: 'user', content: content }] })
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 4000, messages: [{ role: 'user', content }] })
     });
     const data = await ar.json();
     if (data.error) return new Response(JSON.stringify({ error: data.error.message }), { status: 500 });
