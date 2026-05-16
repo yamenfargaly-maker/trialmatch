@@ -511,6 +511,8 @@ async function runMatching() {
 
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
     const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    if (!data.content) throw new Error('No response from AI — check your API key in Netlify environment variables');
     const raw  = data.content.map(b => b.text || '').join('');
     const clean = raw.replace(/```json|```/g, '').trim();
     const trials = JSON.parse(clean);
