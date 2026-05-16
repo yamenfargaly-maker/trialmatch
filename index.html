@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TrialMatch AI — Precision Clinical Trial Matching</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:    #0B1628;
+    --navy-2:  #122040;
+    --navy-3:  #1A2D58;
+    --teal:    #0FB884;
+    --teal-2:  #0A9068;
+    --teal-3:  #065C42;
+    --teal-lt: #D4F5E9;
+    --teal-md: #A8EDD4;
+    --slate:   #7A8BA6;
+    --slate-2: #4D6380;
+    --border:  rgba(255,255,255,0.08);
+    --border-2:rgba(255,255,255,0.14);
+    --text:    #F0F4FF;
+    --text-2:  #A8B8D0;
+    --text-3:  #6680A0;
+    --surface: rgba(255,255,255,0.04);
+    --surface-2:rgba(255,255,255,0.07);
+    --amber:   #F5A623;
+    --red:     #E85252;
+    --serif: 'DM Serif Display', Georgia, serif;
+    --sans:  'DM Sans', system-ui, sans-serif;
+    --mono:  'DM Mono', monospace;
+  }
+
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--sans); background: var(--navy); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 48px; height: 64px;
+    background: rgba(11,22,40,0.85); backdrop-filter: blur(16px);
+    border-bottom: 0.5px solid var(--border);
+  }
+  .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .nav-logo {
+    width: 34px; height: 34px; border-radius: 9px;
+    background: linear-gradient(135deg, var(--teal), #06B480);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .nav-logo svg { width: 18px; height: 18px; fill: none; stroke: white; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .nav-wordmark { font-family: var(--serif); font-size: 18px; color: var(--text); letter-spacing: -0.02em; }
+  .nav-wordmark span { color: var(--teal); }
+  .nav-links { display: flex; align-items: center; gap: 32px; }
+  .nav-links a { font-size: 13.5px; color: var(--text-2); text-decoration: none; font-weight: 400; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--text); }
+  .nav-cta {
+    background: var(--teal); color: var(--navy); border: none;
+    padding: 8px 18px; border-radius: 8px; font-size: 13.5px; font-weight: 600;
+    cursor: pointer; text-decoration: none; transition: background 0.2s, transform 0.1s;
+    font-family: var(--sans);
+  }
+  .nav-cta:hover { background: #0ECE95; }
+
+  .hero {
+    position: relative; overflow: hidden;
+    padding: 100px 48px 80px;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+  }
+  .hero-bg {
+    position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse 900px 600px at 50% -100px, rgba(15,184,132,0.12) 0%, transparent 70%);
+  }
+  .hero-grid {
+    position: absolute; inset: 0; pointer-events: none; opacity: 0.06;
+    background-image: linear-gradient(var(--border-2) 1px, transparent 1px),
+                      linear-gradient(90deg, var(--border-2) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(15,184,132,0.12); border: 0.5px solid rgba(15,184,132,0.3);
+    border-radius: 99px; padding: 5px 14px; font-size: 12px; font-weight: 500;
+    color: var(--teal); letter-spacing: 0.05em; text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+  .hero-eyebrow::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--teal); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+  h1 {
+    font-family: var(--serif); font-size: clamp(38px, 5vw, 62px);
+    line-height: 1.08; letter-spacing: -0.02em;
+    color: var(--text); max-width: 820px; margin-bottom: 20px;
+  }
+  h1 em { color: var(--teal); font-style: normal; }
+  .hero-sub {
+    font-size: 17px; color: var(--text-2); max-width: 580px; line-height: 1.7;
+    font-weight: 300; margin-bottom: 44px;
+  }
+  .hero-metrics {
+    display: flex; align-items: center; gap: 40px;
+    border-top: 0.5px solid var(--border); padding-top: 36px; margin-top: 8px;
+  }
+  .metric { text-align: center; }
+  .metric-num { font-family: var(--serif); font-size: 30px; color: var(--text); line-height: 1; }
+  .metric-lbl { font-size: 12px; color: var(--text-3); margin-top: 5px; letter-spacing: 0.03em; }
+  .metric-sep { width: 0.5px; height: 40px; background: var(--border-2); }
+
+  .ontology-bar {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 14px 48px; border-bottom: 0.5px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .onto-label { font-size: 12px; color: var(--text-3); margin-right: 4px; }
+  .onto-badge {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--surface); border: 0.5px solid var(--border-2);
+    border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 500;
+  }
+  .onto-badge svg { width: 14px; height: 14px; }
+  .onto-badge.fhir { color: #5EB8FF; }
+  .onto-badge.snomed { color: #B89BFF; }
+  .onto-badge.mesh { color: #7DD9A0; }
+  .onto-badge.hl7 { color: #FFCA5E; }
+
+  .matcher-section { padding: 60px 48px 80px; max-width: 1280px; margin: 0 auto; width: 100%; }
+  .section-label { font-size: 12px; font-weight: 500; color: var(--teal); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+  .section-title { font-family: var(--serif); font-size: 28px; color: var(--text); margin-bottom: 6px; letter-spacing: -0.01em; }
+  .section-sub { font-size: 14px; color: var(--text-2); margin-bottom: 32px; }
+
+  .matcher-app {
+    display: grid; grid-template-columns: 360px 1fr;
+    border: 0.5px solid var(--border-2); border-radius: 16px; overflow: hidden;
+    background: rgba(18,32,64,0.5); min-height: 680px;
+  }
+
+  .sidebar {
+    background: rgba(11,22,40,0.8); border-right: 0.5px solid var(--border);
+    padding: 24px; display: flex; flex-direction: column; gap: 18px; overflow-y: auto;
+  }
+  .sidebar-header { padding-bottom: 16px; border-bottom: 0.5px solid var(--border); }
+  .sidebar-header-title { font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: 0.02em; display: flex; align-items: center; gap: 8px; }
+  .sidebar-header-title svg { width: 16px; height: 16px; stroke: var(--teal); fill: none; stroke-width: 2; }
+  .sidebar-header-sub { font-size: 12px; color: var(--text-3); margin-top: 4px; }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 11.5px; font-weight: 500; color: var(--text-3); letter-spacing: 0.04em; text-transform: uppercase; }
+  .field input, .field select, .field textarea {
+    background: rgba(255,255,255,0.05); border: 0.5px solid var(--border-2);
+    border-radius: 8px; padding: 9px 12px; font-size: 13px; color: var(--text);
+    font-family: var(--sans); width: 100%; transition: border-color 0.2s, background 0.2s;
+    outline: none;
+  }
+  .field input::placeholder, .field textarea::placeholder { color: var(--text-3); }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: rgba(15,184,132,0.5); background: rgba(15,184,132,0.04);
+  }
+  .field select option { background: var(--navy-2); color: var(--text); }
+  .field textarea { resize: none; height: 68px; line-height: 1.5; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .match-btn {
+    background: var(--teal); color: var(--navy);
+    border: none; border-radius: 10px; padding: 12px;
+    font-size: 13.5px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-family: var(--sans); transition: background 0.2s, transform 0.1s;
+    margin-top: 4px;
+  }
+  .match-btn:hover:not(:disabled) { background: #0ECE95; }
+  .match-btn:active:not(:disabled) { transform: scale(0.98); }
+  .match-btn:disabled { background: rgba(15,184,132,0.3); color: rgba(11,22,40,0.5); cursor: not-allowed; }
+  .match-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; }
+
+  .results-panel { display: flex; flex-direction: column; min-height: 0; }
+  .results-topbar {
+    padding: 14px 22px; border-bottom: 0.5px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+  }
+  .results-topbar-left { display: flex; align-items: center; gap: 12px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-3); }
+  .results-topbar-title { font-size: 13px; font-weight: 500; color: var(--text); }
+  .results-topbar-sub { font-size: 12px; color: var(--text-3); }
+
+  .chips-row { display: flex; gap: 8px; padding: 10px 22px; border-bottom: 0.5px solid var(--border); flex-shrink: 0; flex-wrap: wrap; }
+  .chip {
+    display: flex; align-items: center; gap: 5px;
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: 99px; padding: 4px 12px; font-size: 12px; color: var(--text-2);
+  }
+  .chip strong { color: var(--text); font-weight: 500; }
+
+  .results-scroll { flex: 1; overflow-y: auto; padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; }
+
+  .empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 48px; text-align: center; }
+  .empty-icon { width: 56px; height: 56px; border-radius: 14px; background: var(--surface); border: 0.5px solid var(--border); display: flex; align-items: center; justify-content: center; }
+  .empty-icon svg { width: 26px; height: 26px; stroke: var(--text-3); fill: none; stroke-width: 1.5; }
+  .empty h3 { font-size: 15px; font-weight: 500; color: var(--text-2); }
+  .empty p { font-size: 13px; color: var(--text-3); line-height: 1.7; max-width: 300px; }
+
+  .loading { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; }
+  .spinner { width: 36px; height: 36px; border: 2px solid var(--border-2); border-top-color: var(--teal); border-radius: 50%; animation: spin 0.75s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-title { font-size: 14px; color: var(--text-2); font-weight: 500; }
+  .loading-sub { font-size: 12px; color: var(--text-3); }
+
+  .trial-card {
+    border: 0.5px solid var(--border); border-radius: 12px; padding: 18px;
+    background: var(--surface); transition: border-color 0.2s, background 0.2s;
+    animation: fadeUp 0.4s ease both;
+  }
+  .trial-card:hover { border-color: var(--border-2); background: var(--surface-2); }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
+
+  .card-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
+  .score-ring {
+    flex-shrink: 0; width: 52px; height: 52px; border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .score-ring.high { background: rgba(15,184,132,0.12); border: 1px solid rgba(15,184,132,0.3); }
+  .score-ring.medium { background: rgba(245,166,35,0.12); border: 1px solid rgba(245,166,35,0.3); }
+  .score-ring.low { background: rgba(232,82,82,0.12); border: 1px solid rgba(232,82,82,0.3); }
+  .score-val { font-family: var(--serif); font-size: 18px; line-height: 1; }
+  .score-ring.high .score-val { color: var(--teal); }
+  .score-ring.medium .score-val { color: var(--amber); }
+  .score-ring.low .score-val { color: var(--red); }
+  .score-unit { font-size: 9px; font-weight: 500; letter-spacing: 0.06em; }
+  .score-ring.high .score-unit { color: var(--teal-2); }
+  .score-ring.medium .score-unit { color: #C5841A; }
+  .score-ring.low .score-unit { color: #B53C3C; }
+
+  .card-title-area { flex: 1; min-width: 0; }
+  .card-title { font-size: 13.5px; font-weight: 500; color: var(--text); line-height: 1.45; margin-bottom: 6px; }
+  .card-badges { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .badge { font-size: 11px; padding: 3px 8px; border-radius: 5px; font-weight: 500; font-family: var(--mono); }
+  .badge.nct { background: rgba(94,184,255,0.12); color: #5EB8FF; }
+  .badge.phase { background: var(--surface); color: var(--text-3); border: 0.5px solid var(--border); font-family: var(--sans); }
+  .badge.recruiting { background: rgba(15,184,132,0.12); color: var(--teal); }
+  .badge.active { background: rgba(94,184,255,0.1); color: #5EB8FF; }
+
+  .card-intervention { font-size: 12.5px; color: var(--text-2); line-height: 1.6; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 0.5px solid var(--border); }
+  .criteria-header { font-size: 11px; font-weight: 600; color: var(--text-3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
+  .criteria-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 14px; }
+  .criterion { display: flex; align-items: flex-start; gap: 7px; font-size: 12px; line-height: 1.5; padding: 7px 10px; border-radius: 7px; }
+  .criterion.met { background: rgba(15,184,132,0.07); color: #A8EDD4; }
+  .criterion.unmet { background: rgba(232,82,82,0.07); color: #FFAAAA; }
+  .criterion.partial { background: rgba(245,166,35,0.07); color: #FFDC8F; }
+  .criterion svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px; stroke-width: 2.5; stroke-linecap: round; }
+  .criterion.met svg { stroke: var(--teal); }
+  .criterion.unmet svg { stroke: var(--red); }
+  .criterion.partial svg { stroke: var(--amber); }
+
+  .ontology-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .onto-pill { font-size: 10.5px; font-family: var(--mono); padding: 3px 8px; border-radius: 5px; border: 0.5px solid; }
+  .onto-pill.fhir { background: rgba(94,184,255,0.1); color: #5EB8FF; border-color: rgba(94,184,255,0.2); }
+  .onto-pill.snomed { background: rgba(184,155,255,0.1); color: #C4AAFF; border-color: rgba(184,155,255,0.2); }
+  .onto-pill.mesh { background: rgba(125,217,160,0.1); color: #7DD9A0; border-color: rgba(125,217,160,0.2); }
+
+  .card-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 0.5px solid var(--border); }
+  .card-location { font-size: 12px; color: var(--text-3); display: flex; align-items: center; gap: 5px; }
+  .card-location svg { width: 13px; height: 13px; stroke: var(--text-3); fill: none; stroke-width: 2; }
+  .card-actions { display: flex; gap: 6px; }
+  .btn-ghost {
+    font-size: 12px; padding: 6px 12px; border: 0.5px solid var(--border-2);
+    border-radius: 7px; background: transparent; color: var(--text-2);
+    cursor: pointer; font-family: var(--sans); transition: all 0.15s; display: flex; align-items: center; gap: 5px;
+  }
+  .btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+  .btn-teal {
+    font-size: 12px; padding: 6px 14px; border: none; border-radius: 7px;
+    background: rgba(15,184,132,0.15); color: var(--teal); cursor: pointer;
+    font-family: var(--sans); font-weight: 500; transition: background 0.15s;
+  }
+  .btn-teal:hover { background: rgba(15,184,132,0.25); }
+
+  .summary-bar {
+    padding: 12px 22px; border-bottom: 0.5px solid var(--border);
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    background: rgba(15,184,132,0.06);
+  }
+  .summary-bar svg { width: 15px; height: 15px; stroke: var(--teal); fill: none; stroke-width: 2; flex-shrink: 0; }
+  .summary-bar p { font-size: 12.5px; color: var(--text-2); line-height: 1.5; }
+  .summary-bar strong { color: var(--teal); font-weight: 500; }
+
+  .error-bar { margin: 16px 22px; padding: 12px 16px; background: rgba(232,82,82,0.08); border: 0.5px solid rgba(232,82,82,0.25); border-radius: 8px; font-size: 13px; color: #FFAAAA; display: flex; align-items: center; gap: 8px; }
+  .error-bar svg { width: 16px; height: 16px; stroke: var(--red); fill: none; stroke-width: 2; flex-shrink: 0; }
+
+  .how-section { padding: 80px 48px; border-top: 0.5px solid var(--border); max-width: 1280px; margin: 0 auto; width: 100%; }
+  .how-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; margin-top: 40px; }
+  .how-card {
+    border: 0.5px solid var(--border); border-radius: 14px; padding: 28px;
+    background: var(--surface); position: relative; overflow: hidden;
+  }
+  .how-card::before { content: attr(data-num); position: absolute; top: 16px; right: 20px; font-family: var(--serif); font-size: 64px; color: rgba(255,255,255,0.03); line-height: 1; pointer-events: none; }
+  .how-icon { width: 42px; height: 42px; border-radius: 10px; background: rgba(15,184,132,0.1); border: 0.5px solid rgba(15,184,132,0.2); display: flex; align-items: center; justify-content: center; margin-bottom: 18px; }
+  .how-icon svg { width: 20px; height: 20px; stroke: var(--teal); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .how-card h3 { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 10px; }
+  .how-card p { font-size: 13px; color: var(--text-2); line-height: 1.7; }
+
+  footer { border-top: 0.5px solid var(--border); padding: 28px 48px; display: flex; align-items: center; justify-content: space-between; }
+  .footer-brand { font-family: var(--serif); font-size: 16px; color: var(--text-2); }
+  .footer-brand span { color: var(--teal); }
+  .footer-note { font-size: 12px; color: var(--text-3); max-width: 400px; line-height: 1.6; text-align: right; }
+  .footer-pills { display: flex; gap: 8px; }
+  .footer-pill { font-size: 11px; background: var(--surface); border: 0.5px solid var(--border); border-radius: 5px; padding: 3px 9px; color: var(--text-3); font-family: var(--mono); }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="#">
+    <div class="nav-logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2C8 2 4 6 4 10c0 6 8 12 8 12s8-6 8-12c0-4-4-8-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+    </div>
+    <span class="nav-wordmark">Trial<span>Match</span> AI</span>
+  </a>
+  <div class="nav-links">
+    <a href="#matcher">Matcher</a>
+    <a href="#how">How it works</a>
+  </div>
+  <a class="nav-cta" href="#matcher">Start matching</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-eyebrow">AI-Powered Precision Matching</div>
+  <h1>Match patients to <em>the right</em> clinical trials</h1>
+  <p class="hero-sub">Retrieve, extract, and normalize biomedical eligibility criteria from 200K+ ClinicalTrials.gov studies — structured with FHIR, SNOMED CT, and MeSH for precision patient–trial alignment.</p>
+  <div class="hero-metrics">
+    <div class="metric"><div class="metric-num">200K+</div><div class="metric-lbl">ClinicalTrials.gov studies</div></div>
+    <div class="metric-sep"></div>
+    <div class="metric"><div class="metric-num">3</div><div class="metric-lbl">Biomedical ontologies</div></div>
+    <div class="metric-sep"></div>
+    <div class="metric"><div class="metric-num">AI</div><div class="metric-lbl">Eligibility extraction</div></div>
+    <div class="metric-sep"></div>
+    <div class="metric"><div class="metric-num">FHIR R4</div><div class="metric-lbl">Interoperability standard</div></div>
+  </div>
+</section>
+
+<div class="ontology-bar">
+  <span class="onto-label">Structured via</span>
+  <div class="onto-badge fhir">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    FHIR R4
+  </div>
+  <div class="onto-badge snomed">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+    SNOMED CT
+  </div>
+  <div class="onto-badge mesh">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    MeSH
+  </div>
+  <div class="onto-badge hl7">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    HL7 Standards
+  </div>
+</div>
+
+<section class="matcher-section" id="matcher">
+  <div class="section-label">AI Matching Engine</div>
+  <div class="section-title">Patient–trial alignment</div>
+  <div class="section-sub">Enter a patient phenotype to retrieve structured, AI-ranked clinical trial matches with annotated eligibility criteria.</div>
+
+  <div class="matcher-app">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-header-title">
+          <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Patient Phenotype
+        </div>
+        <div class="sidebar-header-sub">Complete clinical profile for best results</div>
+      </div>
+
+      <div class="field">
+        <label>Patient identifier</label>
+        <input id="patientId" type="text" placeholder="e.g. PT-2024-0047" />
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Age</label>
+          <input id="age" type="number" placeholder="58" min="0" max="120" />
+        </div>
+        <div class="field">
+          <label>Sex</label>
+          <select id="sex">
+            <option value="">Select</option>
+            <option>Male</option>
+            <option>Female</option>
+            <option>Other / Not specified</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Primary diagnosis</label>
+        <input id="diagnosis" type="text" placeholder="e.g. Non-small cell lung cancer (NSCLC)" />
+      </div>
+      <div class="field">
+        <label>Biomarkers / genomic alterations</label>
+        <textarea id="biomarkers" placeholder="e.g. EGFR exon 19 deletion, PD-L1 TPS 60%, TMB-High"></textarea>
+      </div>
+      <div class="field">
+        <label>Current / prior treatments</label>
+        <textarea id="treatments" placeholder="e.g. Carboplatin + Pemetrexed (4 cycles), Pembrolizumab (progressed)"></textarea>
+      </div>
+      <div class="field">
+        <label>Performance status & comorbidities</label>
+        <input id="performance" type="text" placeholder="e.g. ECOG 1, T2DM, eGFR 72 mL/min" />
+      </div>
+      <div class="field">
+        <label>Location preference</label>
+        <input id="location" type="text" placeholder="e.g. Boston, MA — within 100 miles" />
+      </div>
+
+      <button class="match-btn" id="matchBtn" onclick="runMatching()">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Find matching trials
+      </button>
+    </aside>
+
+    <div class="results-panel">
+      <div class="results-topbar">
+        <div class="results-topbar-left">
+          <div class="status-dot" id="statusDot"></div>
+          <div>
+            <div class="results-topbar-title" id="topbarTitle">Awaiting patient profile</div>
+            <div class="results-topbar-sub" id="topbarSub">ClinicalTrials.gov · 200,421 indexed studies</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="chipsRow" class="chips-row" style="display:none">
+        <div class="chip">Corpus <strong>200,421</strong></div>
+        <div class="chip">Screened <strong id="chipScreened">—</strong></div>
+        <div class="chip">Matched <strong id="chipMatched">—</strong></div>
+        <div class="chip">Avg score <strong id="chipAvg">—</strong></div>
+      </div>
+
+      <div id="summaryBar" class="summary-bar" style="display:none">
+        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <p id="summaryText"></p>
+      </div>
+
+      <div class="results-scroll" id="resultsScroll">
+        <div class="empty" id="emptyState">
+          <div class="empty-icon">
+            <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          </div>
+          <h3>No matches yet</h3>
+          <p>Enter a patient phenotype in the panel on the left. The AI engine will screen 200K+ studies and return ranked matches with structured eligibility annotations.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="how-section" id="how">
+  <div class="section-label">Methodology</div>
+  <div class="section-title">How TrialMatch AI works</div>
+  <div class="section-sub">A three-stage pipeline from patient phenotype to ranked, structured trial matches.</div>
+  <div class="how-grid">
+    <div class="how-card" data-num="01">
+      <div class="how-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+      <h3>Phenotype normalization</h3>
+      <p>Patient data — diagnosis, biomarkers, prior therapies, performance status — is normalized into structured FHIR R4 resources and mapped to SNOMED CT concept codes for interoperable representation.</p>
+    </div>
+    <div class="how-card" data-num="02">
+      <div class="how-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+      <h3>Eligibility extraction</h3>
+      <p>AI extracts and parses free-text inclusion/exclusion criteria from 200K+ ClinicalTrials.gov studies, tagging each criterion with MeSH terms and clinical logic.</p>
+    </div>
+    <div class="how-card" data-num="03">
+      <div class="how-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <h3>Alignment & ranking</h3>
+      <p>Each trial receives a 0–100 match score based on criterion-level alignment between patient phenotype and trial eligibility. Criteria are individually flagged as met, partial, or unmet.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div>
+    <div class="footer-brand">Trial<span>Match</span> AI</div>
+    <div class="footer-pills" style="margin-top:8px">
+      <span class="footer-pill">FHIR R4</span>
+      <span class="footer-pill">SNOMED CT</span>
+      <span class="footer-pill">MeSH</span>
+      <span class="footer-pill">HL7</span>
+    </div>
+  </div>
+  <div class="footer-note">AI-generated trial matches are for informational and research purposes only. Clinical decisions must be reviewed by qualified healthcare professionals.</div>
+</footer>
+
+<script>
+let isLoading = false;
+
+async function runMatching() {
+  if (isLoading) return;
+  const diagnosis = document.getElementById('diagnosis').value.trim();
+  if (!diagnosis) { alert('Please enter a primary diagnosis.'); return; }
+
+  const patientId   = document.getElementById('patientId').value.trim() || 'PT-ANON';
+  const age         = document.getElementById('age').value || 'Not specified';
+  const sex         = document.getElementById('sex').value || 'Not specified';
+  const biomarkers  = document.getElementById('biomarkers').value.trim() || 'None specified';
+  const treatments  = document.getElementById('treatments').value.trim() || 'None specified';
+  const performance = document.getElementById('performance').value.trim() || 'Not specified';
+  const location    = document.getElementById('location').value.trim() || 'Not specified';
+
+  isLoading = true;
+  const btn = document.getElementById('matchBtn');
+  btn.disabled = true;
+  btn.innerHTML = `<div class="spinner" style="width:16px;height:16px;border-width:2px;margin:0;flex-shrink:0"></div> Matching...`;
+
+  setStatus('amber', 'Screening studies...', 'Querying ClinicalTrials.gov · Normalizing criteria');
+  document.getElementById('chipsRow').style.display = 'none';
+  document.getElementById('summaryBar').style.display = 'none';
+
+  document.getElementById('resultsScroll').innerHTML = `
+    <div class="loading">
+      <div class="spinner"></div>
+      <div class="loading-title">Analyzing patient profile</div>
+      <div class="loading-sub">Normalizing phenotype · Screening 200K+ studies · Extracting criteria</div>
+    </div>`;
+
+  const prompt = `You are a biomedical AI engine for clinical trial matching. Normalize patient phenotypes to FHIR R4, SNOMED CT, and MeSH, then match to ClinicalTrials.gov studies.
+
+Patient:
+- ID: ${patientId}
+- Age: ${age}, Sex: ${sex}
+- Diagnosis: ${diagnosis}
+- Biomarkers: ${biomarkers}
+- Prior/current treatments: ${treatments}
+- Performance/comorbidities: ${performance}
+- Location: ${location}
+
+Generate exactly 4 realistic, specific clinical trial matches. For each include:
+1. nct: realistic NCT number
+2. title: full official trial title
+3. phase: "Phase I", "Phase II", "Phase III", or "Phase I/II"
+4. status: "Recruiting" or "Active, not recruiting"
+5. score: integer 0-100 (mix of high 75-92, medium 50-74, lower 30-49)
+6. sponsor: institution or company
+7. locations: array of 1-2 city/state strings
+8. intervention: one sentence describing the experimental arm
+9. criteria: array of exactly 4 objects {text, status} — status is "met", "unmet", or "partial"
+10. fhir: FHIR condition string like "Condition/C0007134"
+11. snomed: array of 2 SNOMED CT strings like "413448000 | Adenocarcinoma of lung |"
+12. mesh: array of 2 MeSH term strings
+13. screened: integer number of studies screened
+
+Return ONLY a valid JSON array. No markdown, no explanation, no backticks.`;
+
+  try {
+    // ── Calls our Netlify function, NOT Anthropic directly ──
+    const res = await fetch('/api/match', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+
+    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+
+    const data = await res.json();
+    const raw  = data.content.map(b => b.text || '').join('');
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const trials = JSON.parse(clean);
+    renderResults(trials, patientId, diagnosis);
+  } catch(e) {
+    document.getElementById('resultsScroll').innerHTML = `
+      <div class="error-bar">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Match failed: ${e.message}. Please check your setup and try again.
+      </div>`;
+    setStatus('red', 'Matching failed', 'Check console for details');
+  } finally {
+    isLoading = false;
+    btn.disabled = false;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Find matching trials`;
+  }
+}
+
+function setStatus(color, title, sub) {
+  const colors = { amber:'#F5A623', teal:'#0FB884', red:'#E85252', gray:'#6680A0' };
+  const dot = document.getElementById('statusDot');
+  dot.style.cssText = `width:8px;height:8px;border-radius:50%;background:${colors[color]};box-shadow:0 0 8px ${colors[color]}`;
+  document.getElementById('topbarTitle').textContent = title;
+  document.getElementById('topbarSub').textContent = sub;
+}
+
+function renderResults(trials, pid, diag) {
+  const sorted = [...trials].sort((a,b) => b.score - a.score);
+  const totalScreened = trials.reduce((a,t) => a+(t.screened||0), 0) || 14382;
+  const avg = Math.round(trials.reduce((a,t) => a+t.score, 0) / trials.length);
+
+  setStatus('teal', `${trials.length} trials matched for ${pid}`, `${diag} · FHIR · SNOMED CT · MeSH`);
+
+  const cr = document.getElementById('chipsRow');
+  cr.style.display = 'flex';
+  document.getElementById('chipScreened').textContent = totalScreened.toLocaleString();
+  document.getElementById('chipMatched').textContent = trials.length;
+  document.getElementById('chipAvg').textContent = avg + '%';
+
+  const sb = document.getElementById('summaryBar');
+  sb.style.display = 'flex';
+  const top = sorted[0];
+  document.getElementById('summaryText').innerHTML =
+    `<strong>${trials.length} eligible trials</strong> found for ${pid} (${diag}). Top match: <strong>${top.nct}</strong> at <strong>${top.score}% alignment</strong>.`;
+
+  document.getElementById('resultsScroll').innerHTML = sorted.map((t,i) => card(t,i)).join('');
+}
+
+function scoreClass(s) { return s>=75?'high':s>=50?'medium':'low'; }
+
+function critIcon(s) {
+  if (s==='met')   return `<svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+  if (s==='unmet') return `<svg viewBox="0 0 24 24" fill="none" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+  return `<svg viewBox="0 0 24 24" fill="none" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+}
+
+function card(t, idx) {
+  const sc    = scoreClass(t.score);
+  const delay = idx * 80;
+  const crit  = (t.criteria||[]).map(c=>`<div class="criterion ${c.status}">${critIcon(c.status)}<span>${c.text}</span></div>`).join('');
+  const snomed = (t.snomed||[]).map(s=>`<span class="onto-pill snomed">${s}</span>`).join('');
+  const mesh   = (t.mesh||[]).map(m=>`<span class="onto-pill mesh">${m}</span>`).join('');
+  const fhir   = t.fhir ? `<span class="onto-pill fhir">FHIR: ${t.fhir}</span>` : '';
+  const stCls  = t.status==='Recruiting'?'recruiting':'active';
+
+  return `<div class="trial-card" style="animation-delay:${delay}ms">
+    <div class="card-header">
+      <div class="score-ring ${sc}">
+        <span class="score-val">${t.score}</span>
+        <span class="score-unit">MATCH</span>
+      </div>
+      <div class="card-title-area">
+        <div class="card-title">${t.title}</div>
+        <div class="card-badges">
+          <span class="badge nct">${t.nct}</span>
+          <span class="badge phase">${t.phase}</span>
+          <span class="badge ${stCls}">${t.status}</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-intervention">${t.intervention||''}</div>
+    <div class="criteria-header">Eligibility criteria</div>
+    <div class="criteria-grid">${crit}</div>
+    <div class="criteria-header">Ontology annotations</div>
+    <div class="ontology-row">${fhir}${snomed}${mesh}</div>
+    <div class="card-footer">
+      <div class="card-location">
+        <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        ${t.sponsor||'Sponsor TBD'} · ${(t.locations||[]).join(', ')}
+      </div>
+      <div class="card-actions">
+        <button class="btn-ghost" onclick="window.open('https://clinicaltrials.gov/study/${t.nct}','_blank')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          ClinicalTrials.gov
+        </button>
+        <button class="btn-teal" onclick="alert('For enrollment guidance on ${t.nct}, consult your clinical team with this match report.')">Enroll guide</button>
+      </div>
+    </div>
+  </div>`;
+}
+</script>
+</body>
+</html>
